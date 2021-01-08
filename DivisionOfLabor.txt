@@ -1,0 +1,16 @@
+/*This file describes who is working on what ( refer to the README for the project description)
+
+Part 1: Parsing ()
+Part 2: Env Var()
+Part 3: Prompt()
+Part 4: Tidle Expansion()
+Part 5: $PATH Search()
+Part 6: External Command Execution
+Part 7: I/O Redirection()
+Part 8: Piping()
+Part 9: Background Processing()
+Part 10: Built in Functions()
+Extra Credit:
+Unlimited Pipes: ()
+Piping & I/O: ()
+Shellception: ()
