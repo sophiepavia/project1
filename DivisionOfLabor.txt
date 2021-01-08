@@ -3,8 +3,8 @@
 Part 1: Parsing () everyone  
 Part 2: Env Var()
 Part 3: Prompt()
-Part 4: Tidle Expansion()
-Part 5: $PATH Search()
+Part 4: Tilde Expansion()
+Part 5: $PATH Search(): Colin, 
 Part 6: External Command Execution
 Part 7: I/O Redirection()
 Part 8: Piping()
