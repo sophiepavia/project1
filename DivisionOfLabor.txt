@@ -1,16 +1,16 @@
 /*This file describes who is working on what ( refer to the README for the project description)
 
-Part 1: Parsing () everyone  
-Part 2: Env Var()
-Part 3: Prompt()
-Part 4: Tilde Expansion()
-Part 5: $PATH Search(): Colin, 
-Part 6: External Command Execution
-Part 7: I/O Redirection()
-Part 8: Piping()
-Part 9: Background Processing()
-Part 10: Built in Functions()
+Part 1: Parsing () Everyone  
+Part 2: Env Var(): Sophie and Sydney
+Part 3: Prompt(): Sydney and Colin
+Part 4: Tilde Expansion(): Sophie and Sydney
+Part 5: $PATH Search(): Colin and Sydney
+Part 6: External Command Execution: Sophie and Colin
+Part 7: I/O Redirection(): Sophie and Sydney
+Part 8: Piping(): Sophie and Colin
+Part 9: Background Processing(): Colin and Sophie
+Part 10: Built in Functions(): Sydney and Colin
 Extra Credit:
-Unlimited Pipes: ()
-Piping & I/O: ()
-Shellception: ()
+Unlimited Pipes: (): Sydney
+Piping & I/O: (): Sophie
+Shellception: (): Colin
