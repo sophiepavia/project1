@@ -1,0 +1,9 @@
+1/10/21
+  After reading over the project description again I had some questions. So I'm putting them here to document them and provide a place for y'all to contribute 
+  your own as well. 
+   1) In the restrictions, are we allowed to use fork() or do we need to implement our own version?
+   2) What does implementing execv() entail? 
+   3) How often should we meet/what goals/deadlines should we set for ourselves? 
+   4) For the assumptions, will we make our shell robust in the sense that we DONT need to test for the assumptions because they're assumed, or that we need to 
+            make sure an error message prints out for every case in which the assumptions are infringed? 
+   - Colin 
