@@ -10,6 +10,10 @@ typedef struct
 	char **items;
 } tokenlist;
 
+void stringCompare(char *input);
+void exitFunction();
+void cdFunction();
+
 char *get_input(void);
 tokenlist *get_tokens(char *input);
 
@@ -38,6 +42,8 @@ void parser(void)
 		for (int i = 0; i < tokens->size; i++) {
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
+		
+		stringCompare(input);
 		
 		free(input);
 		free_tokens(tokens);
@@ -116,4 +122,30 @@ void free_tokens(tokenlist *tokens)
 		free(tokens->items[i]);
 
 	free(tokens);
+}
+void stringCompare(char *input)
+{
+	char a[5] = {'e', 'x', 'i', 't', '\0'};
+	char b[3] = {'c', 'd', '\0'};
+	
+	if(strcmp(a,input) == 0)
+	return exitFunction();
+
+	else if(strcmp(b,input) == 0)
+	return cdFunction();	
+}
+void exitFunction(void)
+{
+	//must do a check to see if background proccesses
+	//are running, print how long they are running,
+	//Print how long it took for the longest running 
+	//command to execute then exit
+	//if no processes are running then exit
+	
+	exit(0);
+}
+void cdFunction(void)
+{
+	//setting up the change directory
+	//function, will implement later
 }
