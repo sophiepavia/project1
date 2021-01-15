@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 void parser();
 
@@ -21,6 +22,9 @@ tokenlist *new_tokenlist(void);
 void add_token(tokenlist *tokens, char *item);
 void free_tokens(tokenlist *tokens);
 
+void getEnv(const char * name);
+bool containEnv(char *token);
+
 int main()
 {
 	parser();
@@ -36,15 +40,28 @@ void parser(void)
 		*/
 		
 		char *input = get_input();
-		printf("whole input: %s\n", input);
+		//printf("whole input: %s\n", input);
 		
 		tokenlist *tokens = get_tokens(input);
 		for (int i = 0; i < tokens->size; i++) {
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
 		
-		stringCompare(input);
-		
+		//stringCompare(input);
+		if(strcmp(tokens->items[0], "(echo)"))
+		{
+			for(int i = 1; i < tokens->size; i++)
+			{
+				if(containEnv(tokens->items[i]))
+				{
+					getEnv(tokens->items[i]);
+				}
+				else
+					printf("%s ", tokens->items[i]);
+			}
+			printf("\n");
+		}
+	
 		free(input);
 		free_tokens(tokens);
 	}
@@ -123,6 +140,23 @@ void free_tokens(tokenlist *tokens)
 
 	free(tokens);
 }
+void getEnv(const char * name)
+{
+	const char *n = name;
+	n++;
+	printf("%s",getenv(n));}
+bool containEnv(char *token)
+{
+	while(*token)
+	{
+		if (strchr("$", *token))
+			return true;
+		token++;
+	}
+	return false;
+}
+
+/*
 void stringCompare(char *input)
 {
 	char a[5] = {'e', 'x', 'i', 't', '\0'};
@@ -149,3 +183,4 @@ void cdFunction(void)
 	//setting up the change directory
 	//function, will implement later
 }
+*/
