@@ -19,6 +19,7 @@ void cdFunction();
 void findEnv(const char *input);	
 void findPath(const char *copyInput);
 void printPrompt(void);
+void printTilde(const char *input);
 
 char *get_input(void);
 tokenlist *get_tokens(char *input);
@@ -62,10 +63,14 @@ void parser(void)
 				//finEnv function
 				findEnv(tokens->items[i]);
 			}
+			else if(strchr("~", *tokens->items[i]))
+			{
+				printTilde(tokens->items[i]);
+			}
 		}
-
+		stringCompare(input);
+		/*
 		
-		//stringCompare(input);
 		if(strcmp(tokens->items[0], "(echo)"))
 		{
 			for(int i = 1; i < tokens->size; i++)
@@ -79,7 +84,9 @@ void parser(void)
 			}
 			printf("\n");
 		}
+		*/
 	
+		printf("%c", '\n');
 		free(input);
 		free_tokens(tokens);
 	}
@@ -237,7 +244,48 @@ void printPrompt(void)
 	//format USER@MACHINE : PWD >
 }
 
-/*
+void printTilde(const char *input)
+{
+	char *home = "HOME";
+	char *pwd = "PWD";
+	char *oldPWD = "OLDPWD";
+	char *theOldPWD = getenv(oldPWD);
+	char *thePWD = getenv(pwd);
+	char *theHome = getenv(home);
+	const char *copyInput = input;
+
+	//this is if the command was ~+
+	if(input[1] == '+')	
+	{
+		printf("%s", thePWD);
+		for(int i=2; i < strlen(copyInput); i++)
+		printf("%c", copyInput[i]);
+		//printing the expression entered after ~/
+
+	}
+	//this is if the command was ~-
+	else if(input[1] == '-')
+	{
+		printf("%s", theOldPWD);
+		for(int i=2; i < strlen(copyInput); i++)
+		printf("%c", copyInput[i]);
+		//printing the expression entered after ~/
+	}
+	
+	else
+	{
+		//this is if the command was ~/
+		printf("%s", theHome); 
+	
+		for(int i=1; i < strlen(copyInput); i++)
+			printf("%c", copyInput[i]);
+		//printing the expression entered after ~+/
+	}
+	//functionality may not be completely correct, need to read
+	//more about tilde and look into it further
+}
+
+
 void stringCompare(char *input)
 {
 	char a[5] = {'e', 'x', 'i', 't', '\0'};
@@ -264,4 +312,3 @@ void cdFunction(void)
 	//setting up the change directory
 	//function, will implement later
 }
-*/
