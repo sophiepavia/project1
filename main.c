@@ -18,6 +18,7 @@ void exitFunction();
 void cdFunction();
 void findEnv(const char *input);	
 void findPath(const char *copyInput);
+void printPrompt(void);
 
 char *get_input(void);
 tokenlist *get_tokens(char *input);
@@ -37,7 +38,8 @@ int main()
 void parser(void)
 {
 	while (1) {
-		printf("> ");
+		printPrompt();
+		//printf("> ");
 		
 		/* input contains the whole command
 		* tokens contains substrings from input split by spaces
@@ -188,6 +190,7 @@ void findEnv(const char *input)
 	
 	else
 	printf("%s", getenv(copyInput));
+	printf("%s", " ");
 }
 void findPath(const char *copyInput)
 {
@@ -209,6 +212,29 @@ void findPath(const char *copyInput)
 			//prints the paths character by character
 		}
 	}
+}
+void printPrompt(void)
+{
+	//creating the variables to be used in getenv
+	char *user = "USER";
+	char *machine = "MACHINE";
+	char *pwd = "PWD";
+	
+	//capturing the return of getenv
+	char *theUser = getenv(user);
+	char *theMachine = getenv(machine);
+	char *thePWD = getenv(pwd);
+
+	printf("%s", theUser);		//user
+	printf("%c", '@');			//@
+	printf("%s", theMachine);	//machine
+	printf("%s", " ");			//space
+	printf("%c", ':');			//colon
+	printf("%s", " ");			//space
+	printf("%s", thePWD);		//working directory
+	printf("%s", " ");			//space
+	printf("%c", '>');			//arrow
+	//format USER@MACHINE : PWD >
 }
 
 /*
