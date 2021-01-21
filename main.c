@@ -22,8 +22,11 @@ tokenlist *new_tokenlist(void);
 void add_token(tokenlist *tokens, char *item);
 void free_tokens(tokenlist *tokens);
 
-void getEnv(const char * name);
+void getEnv(char * name);
 bool containEnv(char *token);
+void getTilde(char * n);
+bool containTilde(char *token);
+
 
 int main()
 {
@@ -48,7 +51,7 @@ void parser(void)
 		}
 		
 		//stringCompare(input);
-		if(strcmp(tokens->items[0], "(echo)"))
+		if(strcmp(tokens->items[0], "echo") == 0)
 		{
 			for(int i = 1; i < tokens->size; i++)
 			{
@@ -56,11 +59,33 @@ void parser(void)
 				{
 					getEnv(tokens->items[i]);
 				}
+				if(containTilde(tokens->items[i]))
+				{
+					getTilde(tokens->items[i]);
+				}
 				else
 					printf("%s ", tokens->items[i]);
 			}
 			printf("\n");
 		}
+		else
+		{
+			for(int i = 0; i < tokens->size; i++)
+			{
+				if(containEnv(tokens->items[i]))
+				{
+					getEnv(tokens->items[i]);
+					printf("\n");
+				}
+				if(containTilde(tokens->items[i]))
+				{
+					getTilde(tokens->items[i]);
+					printf("\n");
+				}
+			}
+		
+		}
+			
 	
 		free(input);
 		free_tokens(tokens);
@@ -140,16 +165,40 @@ void free_tokens(tokenlist *tokens)
 
 	free(tokens);
 }
-void getEnv(const char * name)
+void getEnv(char * n)
 {
-	const char *n = name;
-	n++;
-	printf("%s",getenv(n));}
+	if(n[0] != '$')
+	{	
+		n = strtok(n, "$");
+		printf("%s", n);
+		n = strtok(NULL, "$");
+	}
+	else
+		n = strtok(n, "$");
+
+	printf("%s",getenv(n));
+}
+void getTilde(char * n)
+{
+	n = strtok(n, "~");
+	printf("%s",getenv("HOME"));
+	printf("%s", n);
+}
 bool containEnv(char *token)
 {
 	while(*token)
 	{
 		if (strchr("$", *token))
+			return true;
+		token++;
+	}
+	return false;
+}
+bool containTilde(char *token)
+{
+	while(*token)
+	{
+		if (strchr("~", *token))
 			return true;
 		token++;
 	}
