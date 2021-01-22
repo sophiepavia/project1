@@ -17,9 +17,9 @@ void stringCompare(char *input);
 void exitFunction();
 void cdFunction();
 void findEnv(const char *input);	
-void findPath(const char *copyInput);
 void printPrompt(void);
 void printTilde(const char *input);
+void lsFunction();
 
 char *get_input(void);
 tokenlist *get_tokens(char *input);
@@ -66,6 +66,11 @@ void parser(void)
 			else if(strchr("~", *tokens->items[i]))
 			{
 				printTilde(tokens->items[i]);
+			}
+			else if((strcmp(tokens->items[0], "ls") == 0)) 
+			{
+				lsFunction();
+				//this is the path search version of ls
 			}
 		}
 		stringCompare(input);
@@ -165,7 +170,7 @@ void free_tokens(tokenlist *tokens)
 
 	free(tokens);
 }
-void getEnv(const char * name)
+/*void getEnv(const char * name)
 {
 	const char *n = name;
 	n++;
@@ -180,46 +185,18 @@ bool containEnv(char *token)
 	}
 	return false;
 }
+*/
 
 void findEnv(const char *input)
 {
 	//prints the expansion of the env variable
-	//if the env variable is PATH then it jumps to the 
-	//findPath function
-	
 	const char *copyInput = input;
 	copyInput++;
 	
-	if(strcmp(copyInput, "PATH") == 0)
-	{
-		findPath(copyInput);
-	}
-	
-	else
 	printf("%s", getenv(copyInput));
 	printf("%s", " ");
 }
-void findPath(const char *copyInput)
-{
-	char *path = getenv(copyInput);
-	//parsing the enviromental varaible path
-	
-	for(int i = 0; i < strlen(path); i++)
-	{
-		if(path[i] == ':')
-		{
-			printf("%c", '\n');
-			//a colon deliminates one path from another
-			//if one is detected a new line will be 
-			//printed and the colon is ignored
-		}
-		else
-		{
-			printf("%c", path[i]);
-			//prints the paths character by character
-		}
-	}
-}
+
 void printPrompt(void)
 {
 	//creating the variables to be used in getenv
@@ -285,7 +262,32 @@ void printTilde(const char *input)
 	//more about tilde and look into it further
 }
 
+void lsFunction()
+{
+	char *path = "PATH";
+	char *thePath = getenv(path);
+	char *x[2];
+	x[0] = "/bin/ls";
+	x[1] = NULL;
+	
+	for(int i=0; i < strlen(thePath); i++)
+	{
+		if(thePath[i] == ':')
+			printf("%c", '\n');
+		else 
+			printf("%c", thePath[i]);
+	}
 
+	int pid = fork();
+	if(pid == 0)
+	{
+		execv(x[0], x);
+	}
+	else 
+		waitpid(pid, NULL, 0);
+	//still working on what arguments need
+	//to be passed to execv()
+}
 void stringCompare(char *input)
 {
 	char a[5] = {'e', 'x', 'i', 't', '\0'};
