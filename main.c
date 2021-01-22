@@ -59,7 +59,7 @@ void parser(void)
 				{
 					getEnv(tokens->items[i]);
 				}
-				if(containTilde(tokens->items[i]))
+				else if(containTilde(tokens->items[i]))
 				{
 					getTilde(tokens->items[i]);
 				}
