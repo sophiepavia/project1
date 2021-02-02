@@ -477,7 +477,8 @@ int cmd_is_builtin(tokenlist * input)
 
 void printingStuff(tokenlist *tokens, int check)
 {
-	
+	if(isInputOut(tokens)
+	   exit(0);
 	for(int i = check; i < tokens->size; i++)
 	{
 		if(containTilde(tokens->items[i]))
@@ -485,10 +486,6 @@ void printingStuff(tokenlist *tokens, int check)
 		
 		else if(containEnv(tokens->items[i]))
 			getEnv(tokens->items[i]);
-		else if(isInputOut(tokens))
-			continue;	//this is because the isInputOut
-						//function alreadys call the I/O
-						//function to execute the command
 		else if(check == 1)
 			printf("%s ", tokens->items[i]);
 	}
@@ -562,6 +559,7 @@ void inputOut(char *left, char *right, int flag, tokenlist *tokens)
 			close(fd);	//closing original file descriptor
 			path = get_abs_path(left);
 			externalCommand(tokens, path);
+			free(path);
 		}
 		else
 		{
