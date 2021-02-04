@@ -34,9 +34,13 @@ bool containEnv(char *token);
 void getTilde(char * n);
 bool containTilde(char *token);
 void printingStuff(tokenlist *tokens, int check);
-void inputOut(char *left, char *right, int flag, tokenlist *tokens);
 
-bool isInputOut(tokenlist *tokens);
+//Input Output redirection
+//----------------------------
+void inputOut(char *left, char *right, int flag, char *path);
+void parseIO(char *input, int flag, char *path);
+void externalCommand2(char *input, char *path);
+int isInputOut(char *token);
 
 void externalCommand(tokenlist *token, char *path);
 
@@ -84,13 +88,34 @@ void parser(void)
 		//printf("whole input: %s\n", input);
 		
 		tokenlist *tokens = get_tokens(input);
-		for (int i = 0; i < tokens->size; i++) {
-			printf("token %d: (%s)\n", i, tokens->items[i]);
-		}
+		//for (int i = 0; i < tokens->size; i++) {
+		//	printf("token %d: (%s)\n", i, tokens->items[i]);
+		//}
 		/*
 		check for built in instead of direct cd
 		*/
 		char * command_path = get_abs_path(tokens-> items[0]);
+		
+		//------ I/O --------
+		int flag = -1;
+		for(int i=0; i < tokens-> size; i++)
+		{
+			flag = isInputOut(tokens-> items[i]);
+			if(flag == 1)
+			{
+				//1 means output > so we need path of
+				//left side of >
+				char *path = get_abs_path(tokens-> items[0]);
+				parseIO(input, flag, path);
+			}	
+			else if(flag == 2)
+			{
+				//2 means input < so we need path of
+				//right side of <
+				char *path = get_abs_path(tokens-> items[2]);
+				parseIO(input, flag, path);
+			}
+		}
 		
 		if(cmd_is_builtin(tokens))	
 		{
@@ -105,7 +130,7 @@ void parser(void)
 			//exit
 		}
 
-		else if(command_path != NULL)
+		else if(command_path != NULL && flag == -1)
 		{
 			externalCommand(tokens, command_path);
 			free(command_path);
@@ -252,6 +277,21 @@ void externalCommand(tokenlist *token, char *path)
 	{
 		waitpid(pid, NULL,0);
 	}
+}
+
+void externalCommand2(char *input, char *path)
+{
+	strcpy(input, path);
+	
+	char *x[2];
+	x[0] = input;
+	x[1] = NULL;
+	//printf("x is %s", x[0]);
+	//printf("\n");
+	
+	execv(x[0], x);
+	//printf("Executed correctly. ");
+	
 }
 
 /* Alternate version of get_tokens from parser.c; allows user 
@@ -477,8 +517,7 @@ int cmd_is_builtin(tokenlist * input)
 
 void printingStuff(tokenlist *tokens, int check)
 {
-	if(isInputOut(tokens)
-	   exit(0);
+	char flag = 0;
 	for(int i = check; i < tokens->size; i++)
 	{
 		if(containTilde(tokens->items[i]))
@@ -486,101 +525,128 @@ void printingStuff(tokenlist *tokens, int check)
 		
 		else if(containEnv(tokens->items[i]))
 			getEnv(tokens->items[i]);
+
 		else if(check == 1)
 			printf("%s ", tokens->items[i]);
 	}
-	if(check == 0)
-		printf("\nInvalid command");
+	//if(check == 0)
+	//	printf("\nInvalid command");
 	
 	printf("\n");
+
 }
 
-bool isInputOut(tokenlist *tokens)
+int isInputOut(char *token)
 {
-	printf("In the I/O bool function");
 	char *left = NULL;
 	char *right = NULL;
+	int output = 0;
+	int input = 0;
 	int flag = 0;
-	//this is making sure that if file 
-	//redirection output is happening then
-	//the file being written from is valid
-	if(strcmp(tokens-> items[1], ">") == 0)
-	{	if(tokens-> items[0] != NULL)
-		{
-			left = tokens-> items[0];
-			right = tokens -> items[2];
-			flag = 1;
-			inputOut(left, right, flag, tokens);
-			return true;
-		}
-	}
-	//this checks for file redirection input
-	//and makes sure both files are valid
-	else if(strcmp(tokens-> items[1], "<") == 0)
+	
+	while(*token)
 	{
-		if(tokens-> items[0] != NULL && 
-		tokens-> items[2] != NULL)
-		{
-			left = tokens-> items[0];
-			right = tokens -> items[2];
-			flag = 2;
-			inputOut(left, right, flag, tokens);
-			return true;
-		}
+			if (strchr(">", *token))
+			output = 1;
+			token++;
 	}
-	else return false;
+	while(*token)
+	{
+		if(strchr("<", *token))
+		input = 1;
+		token++;
+	}	
+	if(input == 1)
+		return 2;
+	if(output == 1)
+		return 1;
+	else return 0;
+	
 }
-
-void inputOut(char *left, char *right, int flag, tokenlist *tokens)
+void parseIO(char *input, int flag, char *path)
 {
 	//if flag = 1 then we have output >
 	//if flag = 2 then we have input <
+	tokenlist *tokens = new_tokenlist();
+	if(flag == 2)
+	{
+		//resetting the path to get the correct one
+		tokens = get_tokens_d(input, '<');
+		char *path = NULL;
+		path = get_abs_path(tokens-> items[1]);
+		printf("Path of the right side is: %s", path);
+	}
+	else if(flag == 1)
+	tokens = get_tokens_d(input, '>');
 	
-	printf("In the I/O function");
-	char *path;
+	char *right = strtok(tokens-> items[1], " ");
+			//left				//right	
+	inputOut(tokens-> items[0], right, flag, path);
+	free_tokens(tokens);
+
+}	
+
+void inputOut(char *left, char *right, int flag, char *path)
+{
+	//if flag = 1 then we have output >
+	//if flag = 2 then we have input <
+	pid_t pid = fork();
+		
 	if(flag == 1)
 	{
-		
-		//creating the file descriptor to signify
-		//that if the file being written to doesnt 
-		//exist it is created for read and write purposes
-		int fd = open(right, O_RDWR | O_CREAT);
-		pid_t pid = fork();
-		
-		//error case
-		if(fd < 0)
-		printf("Error in redirecting output to: %s", right);
-		
-		//regular case
-		else if(pid == 0)
-		{
-			close(1); 	//closing stdout
-			dup(fd);	//duplicate the file descriptor
-			close(fd);	//closing original file descriptor
-			path = get_abs_path(left);
-			externalCommand(tokens, path);
-			free(path);
-		}
-		else
-		{
-			close(fd);
-			waitpid(pid, 0, 0);
-		}
-	}
-	else if(flag == 2)
-	{
-		int fd = open(left, O_RDWR | O_CREAT);
-		pid_t pid = fork();
 		if(pid == 0)
 		{
-			close(0);
-			dup(fd);
-			close(fd);
+			int fd = creat(right, 0666);
+			//int fd = open(right, O_RDWR | O_CREAT, S_IRWXU);
+			//printf("File descriptor is: %d", fd);
+			//printf("'\n'");
+			
+			//error case
+			if(fd < 0)
+			{
+				printf("Error in redirecting output to: %s", right);
+				exit(0);
+			}
+			else
+			{
+				//close(1); 	//closing stdout
+				dup2(fd, 1);	//duplicate the file descriptor
+				close(fd);		//closing original file descriptor
+				externalCommand2(left, path);
+				free(path);
+			}
 		}
-		else
+		else if(pid != 0)
 		{
-			close(fd);
-			waitpid(pid, 0, 0);
+			waitpid(pid, NULL, 0);
+		}
+	}
+
+	else if(flag == 2)
+	{	
+		if(pid == 0)
+		{
+			//int fd = creat(left, 0666);
+			int fd = open(left, O_RDWR | O_CREAT, S_IRWXU);
+			
+			if(fd < 0)
+			{
+				printf("Error in redirecting input to: %s", left);
+				printf("\n");
+				exit(0);
+			}
+			else
+			{
+				dup2(fd, 0);
+				close(fd);
+				printf("Path in the function is: %s\n", path);
+				externalCommand2(right, path);
+				free(path);
+			}
+		}
+		else if(pid != 0)
+		{
+			waitpid(pid, NULL, 0);
 		}
 	}
 }
