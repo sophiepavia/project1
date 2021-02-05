@@ -3,23 +3,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
-//PID RELATED DELCARATIONS
-//-------------------------------------
-typedef struct
-{
-	char * name;
-	int number;	
-} pid;
-pid * new_pid(int number, char * name);
-typedef struct {
-	int size;
-	pid **items ; // NULL terminated
-} pidlist;
-
-pidlist *new_pidlist(void);
-void add_pid(pidlist *pids, int number, char * name);
-void free_pid(pid* ptr);
 //TOKEN/PARSING RELATED DECLARATIONS
 //--------------------------------------
 typedef struct {
@@ -29,12 +14,31 @@ typedef struct {
 
 
 char *get_input(void);
-tokenlist *get_tokens(char *input, char delim);
+tokenlist *get_tokens_d(char *input, char delim);
 tokenlist *new_tokenlist(void);
 void add_token(tokenlist *tokens, char *item);
 void free_tokens(tokenlist *tokens);
 void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end);
-//CD IMPLEMENTATION DECLARATIONS
+void print_tokenlist(tokenlist* tokens, int start, int end);
+void print_tokenlist_full(tokenlist* tokens);
+//PID RELATED DELCARATIONS
+//-------------------------------------
+typedef struct
+{
+	tokenlist * cmdline;
+	int number;	
+} pid;
+typedef struct {
+	int size;
+	pid *items[10];
+} pidlist;
+
+pidlist *new_pidlist(void);
+pid * new_pid(int number, tokenlist * cmdline);
+int add_pid(pidlist *pids, int number, tokenlist * cmdline);
+void remove_pid(pidlist * pids, int index);
+void free_pid(pid* ptr);
+//CD RELATED DECLARATIONS
 //------------------------------------
 void cd_path(const char * arg);
 void cd_home();
@@ -76,9 +80,7 @@ void cd_path(const char * arg)
 	else if(chdir(arg) != 0)
 		perror(arg);
 }
-
-void cd_home()
-{
+void cd_home() {
 	chdir(getenv("HOME"));
 }
 
@@ -94,46 +96,58 @@ void cd(tokenlist * input)
 	update_PWD();		
 }
 
-pid * new_pid(int number, char * name)
+pid * new_pid(int number, tokenlist * cmds)
 {
 	pid * new = (pid *) malloc(sizeof(pid));
 	new -> number = number;
-	new -> name = malloc(strlen(name) + 1);
-	strcpy(new -> name, name);
+	new -> cmdline = new_tokenlist();	
+	copy_tokenlist(new -> cmdline, cmds, 0, cmds -> size);
 	return new;	
+}
+
+int add_pid(pidlist * pids, int number, tokenlist * cmdline)
+{
+	int success = 0;
+	if(pids -> size < 10)
+	{
+		success = 1;
+		pids -> items[pids ->size] = new_pid(number,cmdline);	
+		pids -> size += 1;
+		printf("[%d] %d\n", pids -> size, number);
+	}
+
+	return success;	
 }	
 pidlist *new_pidlist(void)
 {
 	pidlist *pids = (pidlist *) malloc(sizeof(pidlist));
 	pids->size = 0;
-	pids->items = (pid**) malloc(sizeof(pid*));
-	pids->items[0] = NULL;
 	return pids;
 }
 
-void add_pid(pidlist *pids, int number, char * name)
+void remove_pid(pidlist *pids, int index)
 {
-	int i = pids->size;
-	pids->items = (pid **) realloc(pids->items, (i + 2) * sizeof(pid*));
-	pids->items[i] = new_pid(number, name);
-	pids->items[i + 1] = (pid *)malloc(sizeof(pid));
-	pids->items[i + 1] = NULL;
-	pids->size += 1;
-}
+	pid * ptr = pids ->items[index];
+	free_pid(ptr);
+	for(int i = index;i < pids ->size; i++)
+		pids -> items[i] = pids -> items[i+1];
+	pids -> size = pids -> size - 1;
+}	
 
 void free_pid( pid * ptr)
 {
 	if(ptr != NULL)	
-		free(ptr -> name);
+	{
+		free_tokens(ptr -> cmdline);
+		free(ptr);
+	}
+	return;
 }
 
 void free_pids(pidlist* pids)
 {
 	for (int i = 0; i < pids->size; i++)
-	{
 		free_pid(pids->items[i]);
-		free(pids -> items[i]);
-	}
 
 	free(pids);
 }
@@ -159,7 +173,7 @@ void add_token(tokenlist *tokens, char *item)
 }
 
 
-tokenlist *get_tokens(char *input, char delim)
+tokenlist *get_tokens_d(char *input, char delim)
 {
 	char *buf = (char *) malloc(strlen(input) + 1);
 	strcpy(buf, input);
@@ -196,6 +210,24 @@ void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end)
 	return;
 }	
 
+void print_tokenlist(tokenlist * tokens, int start, int end)
+{
+	int i = start;
+	while (i < tokens -> size && i < end - 1)
+	{
+		printf("%s ", tokens -> items[i++]);
+	}
+	printf("%s\n", tokens -> items[end - 1]);
+}
+
+void print_tokenlist_full(tokenlist * tokens)
+{
+	for(int i = 0; i < tokens -> size - 1; i++)
+	{
+		printf("%s ", tokens -> items[i]);
+	}
+	printf("%s\n", tokens -> items[tokens -> size- 1]);
+}
 char *get_input(void)
 {
 	char *buffer = NULL;
@@ -264,7 +296,7 @@ char * get_PATH_str()
 tokenlist* tokenize_path(char ** PATH)
 {
 	tokenlist * t_list = new_tokenlist();
-	t_list = get_tokens(*PATH, ':');
+	t_list = get_tokens_d(*PATH, ':');
 	return t_list ;
 }
 /*
