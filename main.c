@@ -36,64 +36,74 @@ int main()
 	parser();
 	return 0;
 }
+
 void parser(void)
 {
-	while (1) {
+	time_t start = time(NULL);
+	time_t longest_ps = 0;
+	pidlist * pids = new_pidlist();
+	int exit = 0;
+	while (exit != 1)
+	{
 		printPrompt();
-		//printf("> ");
-		
-		/* input contains the whole command
-		* tokens contains substrings from input split by spaces
-		*/
-		
+		char * cmd_path = NULL;
 		char *input = get_input();
-		//printf("whole input: %s\n", input);
+		tokenlist *tokens = get_tokens_d(input, ' ');
+		int flag = -1;
+		int io = 0;
+		time_t ps_time = time(NULL);
 		
-		tokenlist *tokens = get_tokens(input);
-		for (int i = 0; i < tokens->size; i++) {
-			printf("token %d: (%s)\n", i, tokens->items[i]);
-		}
-		
-		for(int i = 0; i < tokens->size; i++)
+		for(int i=0; i < input_tokens-> size; i++)
 		{
-			if(strchr("$", *tokens->items[i]))
+			flag = isInputOut(input_tokens->items[i]);
+			if(flag == 1)
 			{
-				//if the token begins with a $ then it is an
-				//enviromental variable and needs to jump to 
-				//finEnv function
-				findEnv(tokens->items[i]);
-			}
-			else if(strchr("~", *tokens->items[i]))
+				int background = input_has_symbol(input_tokens,"&");
+				io = 1;
+				
+				//1 means output > so we need path of
+				//left side of >
+				char *path = get_abs_path(input_tokens-> items[0]);
+				parseIO(input_str, flag, path, pids, background);
+			}	
+			
+			else if(flag == 2)
 			{
-				printTilde(tokens->items[i]);
-			}
-			else if((strcmp(tokens->items[0], "ls") == 0)) 
-			{
-				lsFunction();
-				//this is the path search version of ls
+				int background = input_has_symbol(input_tokens, "&");
+				io = 1;
+				
+				//2 means input < so we need path of
+				//right side of <
+				char *path = get_abs_path(input_tokens-> items[2]);
+				parseIO(input_str, flag, path, pids, background);
 			}
 		}
-		stringCompare(input);
-		/*
 		
-		if(strcmp(tokens->items[0], "(echo)"))
+		if(io == 0)
 		{
-			for(int i = 1; i < tokens->size; i++)
-			{
-				if(containEnv(tokens->items[i]))
-				{
-					getEnv(tokens->items[i]);
-				}
-				else
-					printf("%s ", tokens->items[i]);
-			}
-			printf("\n");
+			if(input_has_symbol(input_tokens, "|") != -1)
+				pipe_cmd(input_tokens, pids, start, longest_ps);
+			else if(input_has_symbol(input_tokens, "&") != -1)
+				sleep_exec(input_tokens, pids, 0);
+			else
+				exit = exec_tokenlist(&cmd_path,input_tokens, pids,start, longest_ps);
 		}
-		*/
-	
-		printf("%c", '\n');
-		free(input);
-		free_tokens(tokens);
+		
+		ps_time = time(NULL) - ps_time;
+		if(ps_time > longest_ps)
+			longest_ps = ps_time;
+		
+		if(strcmp(input_tokens -> items[0], "jobs") != 0)
+			check_pids(pids);
+		
+		if(input_str != NULL)
+			free(input_str);
+		if(cmd_path != NULL)
+			free(cmd_path);
+		free_tokens(input_tokens);
+	}
+	free(pids);
+	return 0;
 	}
 }
 
