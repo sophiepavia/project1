@@ -101,6 +101,35 @@ void parser(void)
 		if(cmd_path != NULL)
 			free(cmd_path);
 		free_tokens(input_tokens);
+		
+		
+		/*
+		if(cmd_is_builtin(tokens))	
+		{
+		if(strcmp(tokens->items[0], "cd") == 0)
+				cd(tokens);
+			//echo
+		else if(strcmp(tokens->items[0], "echo") == 0)
+		{
+			printingStuff(tokens, 1);
+		}
+			//jobs
+			//exit
+		}
+
+		else if(command_path != NULL && flag == -1)
+		{
+			externalCommand(tokens, command_path);
+			free(command_path);
+		}
+		else
+		{
+			printingStuff(tokens, 0);
+		}
+		*/
+			
+		free(input);
+		free_tokens(tokens);
 	}
 	free(pids);
 	return 0;
