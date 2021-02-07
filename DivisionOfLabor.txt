@@ -10,7 +10,3 @@ Part 7: I/O Redirection(): Sophie and Sydney
 Part 8: Piping(): Sophie and Colin
 Part 9: Background Processing(): Colin and Sophie
 Part 10: Built in Functions(): Sydney and Colin
-Extra Credit:
-Unlimited Pipes: (): Sydney
-Piping & I/O: (): Sophie
-Shellception: (): Colin
