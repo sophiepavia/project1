@@ -9,46 +9,49 @@
 #include <time.h>
 #include <dirent.h> // for PATH searching
 
+// tokenlist
 typedef struct {
 	int size;
 	char **items;
 } tokenlist;
-
+//pid struct for background processing
 typedef struct
 {
-	tokenlist * cmdline;
-	int number;	
-	int timer;
+	tokenlist * cmdline; // input cmdline of ps
+	int number;	// pid number
+	int timer; // for ps time calcs
 } pid;
-
+// pid list for background processing & jobs func
 typedef struct {
-	int size;
+	int size; 
 	pid *items[10];
 } pidlist;
 
-int shell_exit(pidlist * pids, time_t start, time_t longest_ps);
+//PIPING FUNCTION DECLARATIONS
+//wrapper function to determine what version of piping to run
 void pipe_cmd(tokenlist * input_tokens, pidlist * pids, 
 time_t start, time_t longest_ps);
-
+// wrapper function for cmdline with one pipe 
 void double_pipe(tokenlist * input_tokens, pidlist *pids, 
 time_t start,time_t longest_ps);
-
+//wrapper function for cmdline with & at end
 void sleep_exec(tokenlist * input_tokens, pidlist * pids, int pipe);
+// function for checking finished pids in background stack
 int check_pids(pidlist * pids);
-void jobs(pidlist * pids);
+//built in jobs function 
+
 void triple_pipe(tokenlist * input_tokens, pidlist *pids, 
 time_t start, time_t longest_ps);
 
-void copy_tokenlist(tokenlist* dest, tokenlist * 
-src, int start, int end);
 
-char * cm_path_cat(char * path, char * command);
+//wrapper function for executing a cmdline 
 int exec_tokenlist(char ** cmd_path,tokenlist * tokens, 
 pidlist * pids, time_t start, time_t longest_ps);
+//returns index of symbol in input, if it exists 
 int input_has_symbol(tokenlist * input, const char * symbol);
 
-//Input Output redirection
-//----------------------------
+//INPUT/OUTPUT REDIRECTION DELCARATIONS
+//----------------------------------
 bool in = false;
 bool out = false;
 void ioRedirection(tokenlist *token, char * path, 
@@ -67,8 +70,9 @@ tokenlist *get_tokens_d(char *input, char delim);
 tokenlist *new_tokenlist(void);
 void add_token(tokenlist *tokens, char *item);
 void free_tokens(tokenlist *tokens);
-void copy_tokenlist(tokenlist* dest, tokenlist * src, 
-int start, int end);
+// copies a tokenlist from start index to end index 
+void copy_tokenlist(tokenlist* dest, tokenlist * 
+src, int start, int end);
 
 void print_tokenlist(tokenlist* tokens, int start, int end);
 void print_tokenlist_full(tokenlist* tokens);
@@ -81,12 +85,19 @@ pid * new_pid(int number, tokenlist * cmdline);
 int add_pid(pidlist *pids, int number, tokenlist * cmdline);
 void remove_pid(pidlist * pids, int index);
 void free_pid(pid* ptr);
-//CD RELATED DECLARATIONS
+//BUILTIN FUNCTION DECLARATIONS
 //------------------------------------
+//CD--------
 void cd_path(const char * arg);
 void cd_home();
 void cd(tokenlist * input);
 void update_PWD();
+//EXIT ----------
+//this function exits from shell w longest ps time and overall runtime
+int shell_exit(pidlist * pids, time_t start, time_t longest_ps); 
+//JOBS --------
+void jobs(pidlist * pids);
+// wrapper function for cmdline with two pipes 
 //CONDITIONAL METHOD DECLARATIONS
 //-------------------------------------
 int cmd_has_slash(tokenlist * input); // returns 1 if first 
@@ -111,12 +122,19 @@ char * get_abs_path(const char* filename);
 
 //PATH -> EXEC TRANSLATION DECLARATIONS
 //-------------------------------------------
+//concatenates path containing command file to command 
 char * cm_path_cat(char * path, char * command);
+// prints out prompt for shell
 void printPrompt();
+// contains implementation of echo command 
 void printingStuff(tokenlist *tokens, int check);
+//gets the specified env variable
 void getEnv(char * name);
+// determines if a char* contains an envvar
 bool containEnv(char *token);
+//extracts tilde from a char *
 void getTilde(char * n);
+// determines if a char * contains a tilde
 bool containTilde(char *token);
 
 void parser();
@@ -253,89 +271,110 @@ void printPrompt()
 	printf("%c", '>');			//arrow
 	//format USER@MACHINE : PWD >
 }
-
+/*This function updates the personal working directory 
+* to whatever the current working directory is
+*/
 void update_PWD()
 {
 	char cwd[1000];
 	getcwd(cwd, 1000);
 	setenv("PWD",cwd, 1); 
 }
+/*This function gets the target path from 
+* the cd command and calls the appropriate function
+*/
 void cd_path(const char * arg)
 {
-	if(strcmp(arg,"~") == 0)
+	if(strcmp(arg,"~") == 0) // if char contains ~, cd to $HOME
 		cd_home();
-	else if(chdir(arg) != 0)
-		perror(arg);
+	else if(chdir(arg) != 0) // otherwise chdir normally 
+		perror(arg);     // printing errors if they arise
 }
+/*This function changes the current directory 
+* to the home directory.
+*/
 void cd_home() {
-	chdir(getenv("HOME"));
+	chdir(getenv("HOME")); // cd to $HOME
 }
-
+/*This wrapper function takes the input following a
+* cd command and calls the appropriate function depending
+* on the tokens after
+*/
 void cd(tokenlist * input)
 {
-	if(input -> size > 2)
+	if(input -> size > 2) // if input has more than 2 tokens
 		printf("cd: Too many arguments.\n");
-	else if(input -> size == 1)
+	else if(input -> size == 1) // if just cd, do cd home 
 		cd_home();
 	else
-		cd_path(input -> items[1]);
+		cd_path(input -> items[1]); // cd to given path
 
-	update_PWD();		
+	update_PWD();		// update PWD to cwd 
 }
-
+/*This function creates a new pid with the given
+*pid number and cmdline tokenlist
+*/
 pid * new_pid(int number, tokenlist * cmds)
 {
-	pid * new = (pid *) malloc(sizeof(pid));
-	new -> number = number;
+	pid * new = (pid *) malloc(sizeof(pid)); // allocate mem
+	new -> number = number; // assign values
 	new -> timer = 0;
 	new -> cmdline = new_tokenlist();	
-	copy_tokenlist(new -> cmdline, cmds, 0, cmds -> size);
+	copy_tokenlist(new -> cmdline, cmds, 0, cmds -> size); // add cmdline
 	return new;	
 }
-
+/*This function creates a new pid with the given parameters
+* and adds it to the shell's pidlist
+*/
 int add_pid(pidlist * pids, int number, tokenlist * cmdline)
 {
 	int success = 0;
-	if(pids -> size < 10)
+	if(pids -> size < 10) // only 10 bckgr ps allowed 
 	{
 		success = 1;
 		pids -> items[pids ->size] = new_pid(number,cmdline);	
-		pids -> items[pids ->size]->timer = time(NULL);	//to set timer for background processing
+		
+		pids -> items[pids ->size]->timer = time(NULL);	//for bckgr ps time
 		pids -> size += 1;
-		printf("[%d] %d\n", pids -> size, number);
+		printf("[%d] %d\n", pids -> size, number); // print added bcgkr ps info
 	}
 
 	return success;	
 }	
+/*This function initializes a new pidlist*/
 pidlist *new_pidlist(void)
 {
-	pidlist *pids = (pidlist *) malloc(sizeof(pidlist));
-	pids->size = 0;
+	pidlist *pids = (pidlist *) malloc(sizeof(pidlist)); //allocate mem
+	pids->size = 0; // set size to 0
 	return pids;
 }
-
+/*This function removes the pid at the given 
+*index from the pidlist 
+*/
 void remove_pid(pidlist *pids, int index)
 {
-	pid * ptr = pids ->items[index];
+	pid * ptr = pids ->items[index]; // get pid at index and free
 	free_pid(ptr);
-	for(int i = index;i < pids ->size; i++)
+	for(int i = index;i < pids ->size; i++) // shift all pids below back one
 		pids -> items[i] = pids -> items[i+1];
-	pids -> size = pids -> size - 1;
+	pids -> size = pids -> size - 1; // updatee pidlist size 
 }	
-
+/* This function frees all allocated memory from the
+*given pid
+*/
 void free_pid( pid * ptr)
 {
 	if(ptr != NULL)	
 	{
-		free_tokens(ptr -> cmdline);
+		free_tokens(ptr -> cmdline); // free all tokens in cmdline
 		free(ptr);
 	}
 	return;
 }
-
+/*This function frees all pids in a pidlist*/
 void free_pids(pidlist* pids)
 {
-	for (int i = 0; i < pids->size; i++)
+	for (int i = 0; i < pids->size; i++) // free all pids 
 		free_pid(pids->items[i]);
 
 	free(pids);
@@ -361,7 +400,10 @@ void add_token(tokenlist *tokens, char *item)
 	tokens->size += 1;
 }
 
-
+/*This function returns a toknelist using the 
+*parameter char as a delimeter instead of just a
+*space char
+*/
 tokenlist *get_tokens_d(char *input, char delim)
 {
 	char *buf = (char *) malloc(strlen(input) + 1);
@@ -386,7 +428,9 @@ void free_tokens(tokenlist *tokens)
 
 	free(tokens);
 }
-
+/*This function copies tokens from tokenlist src and adds them to 
+*tokenlist dest, from index start to index end -1 
+*/
 void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end)
 {
 	if(start < 0) // fix bounds if they're invalid
@@ -398,24 +442,26 @@ void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end)
 		add_token(dest, src->items[i]);	
 	return;
 }	
-
+/*This function prints all tokens in a tokenlist from
+*the start index to the end index
+*/
 void print_tokenlist(tokenlist * tokens, int start, int end)
 {
 	int i = start;
-	while (i < tokens -> size && i < end - 1)
+	while (i < tokens -> size && i < end - 1) // print tokens start -> last
 	{
 		printf("%s ", tokens -> items[i++]);
 	}
-	printf("%s\n", tokens -> items[end - 1]);
+	printf("%s\n", tokens -> items[end - 1]); // print last token and endline
 }
-
+/*This function prints a tokenlist in its entirety*/
 void print_tokenlist_full(tokenlist * tokens)
 {
-	for(int i = 0; i < tokens -> size - 1; i++)
+	for(int i = 0; i < tokens -> size - 1; i++) // print tokens 0 -> last
 	{
 		printf("%s ", tokens -> items[i]);
 	}
-	printf("%s\n", tokens -> items[tokens -> size- 1]);
+	printf("%s\n", tokens -> items[tokens -> size- 1]); //print last token and endline
 }
 char *get_input(void)
 {
@@ -473,10 +519,10 @@ int cmd_is_builtin(tokenlist * input)
 /* This function returns a char * to a copy of the PATH env variable*/
 char * get_PATH_str()
 {
-	char * path_cpy = getenv("PATH");
+	char * path_cpy = getenv("PATH"); // get PATH envvar
 	char * PATH = NULL;
 	PATH = (char *)realloc( PATH, (strlen(path_cpy) +1) * sizeof(char));
-	strcpy(PATH, path_cpy);
+	strcpy(PATH, path_cpy); // copy PATH envvar and return copy 
 	return PATH;
 }
 /*This function returns a tokenlist of strings related to each
@@ -485,7 +531,7 @@ char * get_PATH_str()
 tokenlist* tokenize_path(char ** PATH)
 {
 	tokenlist * t_list = new_tokenlist();
-	t_list = get_tokens_d(*PATH, ':');
+	t_list = get_tokens_d(*PATH, ':'); // split up copy of PATH around : char
 	return t_list ;
 }
 /*
@@ -494,10 +540,10 @@ tokenlist* tokenize_path(char ** PATH)
  */
 tokenlist* get_PATH_tokens()
 {
-	char * PATH = get_PATH_str();
-	tokenlist * t_list = tokenize_path(&PATH);
-	free (PATH);
-	return t_list;
+	char * PATH = get_PATH_str(); //get copy of PATH
+	tokenlist * t_list = tokenize_path(&PATH); // tokenize copy
+	free (PATH); // free copy of char * of PATH
+	return t_list; // return tokenlist of PATH
 } /*
  *	This function searches the directory specified by the 
  *	parameter path token (pathdir) for a file matching 
@@ -580,16 +626,16 @@ char * get_path_dir(const char * filename)
  */
 char* get_abs_path(const char * filename)
 {
-	char * path = get_path_dir(filename);
+	char * path = get_path_dir(filename); // get directory containing file
 	if(path != NULL)
 	{
 		path = (char*)realloc(path, strlen(path) + strlen(filename) + 2);	
 		strcat(path, "/");
-		strcat(path, filename);
+		strcat(path, filename); // cat dirpath/filename 
 	}	
 	return path;
 }	
-
+/*This function returns a command concatenated with path before it*/
 char * cm_path_cat(char * path, char * command)
 {
 	int length = strlen(path) + strlen(command) + 2;
@@ -601,7 +647,6 @@ char * cm_path_cat(char * path, char * command)
 	return full;
 }
 
-//DEFINITIONS
 
 void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,int background)
 {	
