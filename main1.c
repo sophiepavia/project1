@@ -18,6 +18,7 @@ typedef struct
 {
 	tokenlist * cmdline;
 	int number;	
+	int timer;
 } pid;
 
 typedef struct {
@@ -29,7 +30,7 @@ int shell_exit(pidlist * pids, time_t start, time_t longest_ps);
 void pipe_cmd(tokenlist * input_tokens, pidlist * pids, time_t start, time_t longest_ps);
 void double_pipe(tokenlist * input_tokens, pidlist *pids, time_t start,time_t longest_ps);
 void sleep_exec(tokenlist * input_tokens, pidlist * pids, int pipe);
-void check_pids(pidlist * pids);
+int check_pids(pidlist * pids);
 void jobs(pidlist * pids);
 void triple_pipe(tokenlist * input_tokens, pidlist *pids, time_t start, time_t longest_ps);
 void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end);
@@ -133,7 +134,7 @@ void parser()
 		int flag = -1;
 		
 		time_t ps_time = time(NULL);
-		
+		time_t bps_time = 0;
 		
 		char * cmd_path = get_abs_path(tokens-> items[0]);
 		
@@ -155,24 +156,37 @@ void parser()
 				sleep_exec(input_tokens, pids, 0);
 			else
 				exit = exec_tokenlist(&cmd_path,input_tokens, pids,start, longest_ps);
+
 		}
 		
 		//checking for background processing 
 		
-		ps_time = time(NULL) - ps_time;
-		
-		if(ps_time > longest_ps)
-			longest_ps = ps_time;
 		
 		if(strcmp(input_tokens -> items[0], "jobs") != 0)
-			check_pids(pids);
+			bps_time = check_pids(pids);
+			
+		if(!strchr(input_str, '&'))
+			ps_time = time(NULL) - ps_time;
+		
+		
+		printf("\nbps_time = %ld", bps_time);
+		printf("\nps_time = %ld", ps_time);
+		
+		if(bps_time > longest_ps)
+			longest_ps = bps_time;
+			
+		if(ps_time > longest_ps)
+			longest_ps = ps_time;
+			
+		printf("\nlongest =%ld", longest_ps);
 		
 		if(input_str != NULL)
 			free(input_str);
 			
 		if(cmd_path != NULL)
 			free(cmd_path);
-			
+		
+
 		free_tokens(input_tokens);
 	}
 	free(pids);
@@ -254,6 +268,7 @@ pid * new_pid(int number, tokenlist * cmds)
 {
 	pid * new = (pid *) malloc(sizeof(pid));
 	new -> number = number;
+	new -> timer = 0;
 	new -> cmdline = new_tokenlist();	
 	copy_tokenlist(new -> cmdline, cmds, 0, cmds -> size);
 	return new;	
@@ -266,6 +281,7 @@ int add_pid(pidlist * pids, int number, tokenlist * cmdline)
 	{
 		success = 1;
 		pids -> items[pids ->size] = new_pid(number,cmdline);	
+		pids -> items[pids ->size]->timer = time(NULL);	//to set timer for background processing
 		pids -> size += 1;
 		printf("[%d] %d\n", pids -> size, number);
 	}
@@ -580,6 +596,7 @@ void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,
 		if(strcmp(token->items[i], "<") == 0 || strcmp(token->items[i], ">") == 0)
 			break;
 	}
+	
 	strcpy(copy->items[0], path);
 	
 	fflush(0);
@@ -611,7 +628,7 @@ void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,
 			fd1 = open(file, O_CREAT | S_IRWXU | O_RDWR);
 			if(fd1 < 0)
 			{
-				printf("error\n");
+				printf("error");
 				exit(0);
 			}
 			dup2(fd1, 1);
@@ -624,9 +641,7 @@ void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,
 	{
 		if(background != -1)
 		{
-			tokenlist * copy = new_tokenlist();
-//			copy = get_tokens_d(right, ' ');
-			add_pid(pids,pid, copy);
+			add_pid(pids,pid, token);
 			free(copy);
 			waitpid(pid, NULL, WNOHANG);
 		}
@@ -650,15 +665,22 @@ char * getFile(char *input, bool flag)
 	char *copy = (char *) malloc(strlen(input) + 1);
 	strcpy(copy, input);
 	
+	
 	if(!flag)
 	{
 		n = strtok(copy, ">");
 		n = strtok(NULL, "> ");
+		
+		if(strchr(input, '&'))
+			n = strtok(n, "&");
 	}
 	else if(flag)
 	{
 		n = strtok(copy, "<");
 		n = strtok(NULL, "< ");
+		
+		if(strchr(input, '&'))
+			n = strtok(n, "&");
 	}
 	return n;
 	
@@ -739,20 +761,23 @@ int exec_tokenlist(char ** cmd_path,tokenlist * tokens, pidlist * pids, time_t s
  * process stack and if any are done, the finished process'
  * information is printed out and it is removed from the stack. 
  */
-void check_pids(pidlist * pids)
+int check_pids(pidlist * pids)
 {
 	int pid = 0;
+	int finish_time = 0;
 	for(int i = 0; i < pids -> size; i++)	// iterate through stack
 	{
 		pid = pids -> items[i] -> number; // get pid number from ps
 		if(waitpid(pid, NULL, WNOHANG) !=(pid_t)0)//if ps done
 		{
+			finish_time = time(NULL) - pids->items[i]->timer;
 			printf("[%d]+ ",i + 1); //print out info
 			print_tokenlist_full(pids ->items[i] -> cmdline);
 			remove_pid(pids, i); // remove ps from stack
 		}
 		//else keep checking other processes in stack
 	}
+	return finish_time;
 }	
 
 /*This function goes through the list of pids and if the process 
@@ -791,10 +816,10 @@ void sleep_exec(tokenlist * input_tokens, pidlist * pids, int pipe)
 	{		
 		cmd_path = get_abs_path(copy -> items[0]);
 		execv(cmd_path, copy ->items);
-	}else	{
-
-		waitpid(pid, NULL, WNOHANG); // don't wait (not really necessary)
-
+	}
+	
+	else	
+	{
 		if(pipe == 0) //if not exec'd from pipe func, add pid
 			add_pid(pids, pid, input_tokens); 
 
@@ -854,7 +879,7 @@ void double_pipe(tokenlist * input_tokens, pidlist *pids, time_t start, time_t l
 			exec_tokenlist(&cmd_path, cmd2, pids, start, longest_ps);
 		exit(1);
 
-	}else if (input_has_symbol(cmd2, "&")){ // if CMD2 is bckgr ps, add
+	}else if ((input_has_symbol(cmd2, "&")) != -1){ // if CMD2 is bckgr ps, add
 		add_pid(pids, pid2, input_tokens); // pid with cmdline CMD1 |CMD 2&
 	}
 	
@@ -862,7 +887,7 @@ void double_pipe(tokenlist * input_tokens, pidlist *pids, time_t start, time_t l
 	close(p_fds[1]); // close off both ends of pipe
 
 	waitpid(pid1, NULL, 0);
-	if( input_has_symbol(cmd2, "&")) //if cmd2 is bckgrps, don't wait
+	if((input_has_symbol(cmd2, "&")) != -1) //if cmd2 is bckgrps, don't wait
 		waitpid(pid2, NULL, WNOHANG); 
 	else				// else wait
 		waitpid(pid2, NULL, 0); 
