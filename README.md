@@ -1,5 +1,11 @@
 # project1
 building a shell in c
-hello world
+
+File: shellFinalProject.c
+executicable: shell
+
+Division of Labor
+
+
 
 
