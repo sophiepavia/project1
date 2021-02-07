@@ -13,6 +13,9 @@ Makefile: makefile
   
 readme: README
   what you are reading now :)
+  
+screenschots of github commit log
+  .png(s) will be tared with our files 
 
 Division of Labor
   Part 1: Parsing () Everyone  
