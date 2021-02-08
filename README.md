@@ -1,5 +1,5 @@
 # project1
-building a shell in c
+building a shell in c, we each had our own editing branches and would meet to consolidate these branches into our main. Our screenshots only show the commits to the main branch. 
 
 Colin MacRae, Sophie Pavia, Sydney McGinnis
 
