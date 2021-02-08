@@ -93,7 +93,7 @@ void cd_home();
 void cd(tokenlist * input);
 void update_PWD();
 //EXIT ----------
-//this function exits from shell w longest ps time and overall runtime
+//this function exits from shell w longest process time and overall runtime
 int shell_exit(pidlist * pids, time_t start, time_t longest_ps); 
 //JOBS --------
 void jobs(pidlist * pids);
@@ -147,7 +147,8 @@ int main()
 
 void parser()
 {
-	//declarations for starting to count 
+	//declarations for starting to count time
+	//of processes
 	time_t start = time(NULL);
 	time_t currentTime = time(NULL);
 	time_t longest_ps = 0;
@@ -167,8 +168,8 @@ void parser()
 
 		char * input_str = get_input();
 		
-		tokenlist * input_tokens = get_tokens_d(input_str, ' ');	//alt get tokens
-		tokenlist *tokens = get_tokens(input_str);			//get tokens i/o
+		tokenlist * input_tokens = get_tokens_d(input_str, ' ');  //alt get tokens
+		tokenlist *tokens = get_tokens(input_str);		  //get tokens i/o
 		
 		int flag = -1;
 		
@@ -194,13 +195,13 @@ void parser()
 			else if(input_has_symbol(input_tokens, "&") != -1)
 				sleep_exec(input_tokens, pids, 0);
 			else
-				exit = exec_tokenlist(&cmd_path,input_tokens, pids,start, theLongest_ps);
+				exit = exec_tokenlist(&cmd_path,input_tokens, pids,start, 
+						      theLongest_ps);
 
 		}
 		
 		//checking for background processing 
-		
-		
+	
 		if(strcmp(input_tokens -> items[0], "jobs") != 0)
 			bps_time = check_pids(pids);
 			
@@ -230,7 +231,7 @@ void parser()
 }
 
 
-//DEFINITIONS --------------------------------------------------------------------------------------------
+//-----------------DEFINITIONS ------------------------------------
 tokenlist *get_tokens(char *input)
 {
 	char *buf = (char *) malloc(strlen(input) + 1);
@@ -261,28 +262,26 @@ void printPrompt()
 	char *thePWD = getenv(pwd);
 
 	printf("%s", theUser);		//user
-	printf("%c", '@');			//@
+	printf("%c", '@');		//@
 	printf("%s", theMachine);	//machine
-	printf("%s", " ");			//space
-	printf("%c", ':');			//colon
-	printf("%s", " ");			//space
+	printf("%s", " ");		//space
+	printf("%c", ':');		//colon
+	printf("%s", " ");		//space
 	printf("%s", thePWD);		//working directory
-	printf("%s", " ");			//space
-	printf("%c", '>');			//arrow
+	printf("%s", " ");		//space
+	printf("%c", '>');		//arrow
 	//format USER@MACHINE : PWD >
 }
-/*This function updates the personal working directory 
-* to whatever the current working directory is
-*/
+//This function updates the personal working directory 
+//to whatever the current working directory is
 void update_PWD()
 {
 	char cwd[1000];
 	getcwd(cwd, 1000);
 	setenv("PWD",cwd, 1); 
 }
-/*This function gets the target path from 
-* the cd command and calls the appropriate function
-*/
+//This function gets the target path from 
+//the cd command and calls the appropriate function
 void cd_path(const char * arg)
 {
 	if(strcmp(arg,"~") == 0) // if char contains ~, cd to $HOME
@@ -290,16 +289,14 @@ void cd_path(const char * arg)
 	else if(chdir(arg) != 0) // otherwise chdir normally 
 		perror(arg);     // printing errors if they arise
 }
-/*This function changes the current directory 
-* to the home directory.
-*/
+//This function changes the current directory 
+//to the home directory.
 void cd_home() {
 	chdir(getenv("HOME")); // cd to $HOME
 }
-/*This wrapper function takes the input following a
-* cd command and calls the appropriate function depending
-* on the tokens after
-*/
+//This wrapper function takes the input following a
+//cd command and calls the appropriate function depending
+//on the tokens after
 void cd(tokenlist * input)
 {
 	if(input -> size > 2) // if input has more than 2 tokens
@@ -311,9 +308,8 @@ void cd(tokenlist * input)
 
 	update_PWD();		// update PWD to cwd 
 }
-/*This function creates a new pid with the given
-*pid number and cmdline tokenlist
-*/
+//This function creates a new pid with the given
+//pid number and cmdline tokenlist
 pid * new_pid(int number, tokenlist * cmds)
 {
 	pid * new = (pid *) malloc(sizeof(pid)); // allocate mem
@@ -323,9 +319,8 @@ pid * new_pid(int number, tokenlist * cmds)
 	copy_tokenlist(new -> cmdline, cmds, 0, cmds -> size); // add cmdline
 	return new;	
 }
-/*This function creates a new pid with the given parameters
-* and adds it to the shell's pidlist
-*/
+//This function creates a new pid with the given parameters
+//and adds it to the shell's pidlist
 int add_pid(pidlist * pids, int number, tokenlist * cmdline)
 {
 	int success = 0;
@@ -341,16 +336,15 @@ int add_pid(pidlist * pids, int number, tokenlist * cmdline)
 
 	return success;	
 }	
-/*This function initializes a new pidlist*/
+//This function initializes a new pidlist
 pidlist *new_pidlist(void)
 {
 	pidlist *pids = (pidlist *) malloc(sizeof(pidlist)); //allocate mem
 	pids->size = 0; // set size to 0
 	return pids;
 }
-/*This function removes the pid at the given 
-*index from the pidlist 
-*/
+//This function removes the pid at the given 
+//index from the pidlist 
 void remove_pid(pidlist *pids, int index)
 {
 	pid * ptr = pids ->items[index]; // get pid at index and free
@@ -359,9 +353,8 @@ void remove_pid(pidlist *pids, int index)
 		pids -> items[i] = pids -> items[i+1];
 	pids -> size = pids -> size - 1; // updatee pidlist size 
 }	
-/* This function frees all allocated memory from the
-*given pid
-*/
+//This function frees all allocated memory from the
+//given pid
 void free_pid( pid * ptr)
 {
 	if(ptr != NULL)	
@@ -371,7 +364,7 @@ void free_pid( pid * ptr)
 	}
 	return;
 }
-/*This function frees all pids in a pidlist*/
+//This function frees all pids in a pidlist
 void free_pids(pidlist* pids)
 {
 	for (int i = 0; i < pids->size; i++) // free all pids 
@@ -400,10 +393,9 @@ void add_token(tokenlist *tokens, char *item)
 	tokens->size += 1;
 }
 
-/*This function returns a toknelist using the 
-*parameter char as a delimeter instead of just a
-*space char
-*/
+//This function returns a toknelist using the 
+//parameter char as a delimeter instead of just a
+//space char
 tokenlist *get_tokens_d(char *input, char delim)
 {
 	char *buf = (char *) malloc(strlen(input) + 1);
@@ -428,9 +420,8 @@ void free_tokens(tokenlist *tokens)
 
 	free(tokens);
 }
-/*This function copies tokens from tokenlist src and adds them to 
-*tokenlist dest, from index start to index end -1 
-*/
+//This function copies tokens from tokenlist src and adds them to 
+//tokenlist dest, from index start to index end -1 
 void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end)
 {
 	if(start < 0) // fix bounds if they're invalid
@@ -442,9 +433,8 @@ void copy_tokenlist(tokenlist* dest, tokenlist * src, int start, int end)
 		add_token(dest, src->items[i]);	
 	return;
 }	
-/*This function prints all tokens in a tokenlist from
-*the start index to the end index
-*/
+//This function prints all tokens in a tokenlist from
+//the start index to the end index
 void print_tokenlist(tokenlist * tokens, int start, int end)
 {
 	int i = start;
@@ -454,7 +444,7 @@ void print_tokenlist(tokenlist * tokens, int start, int end)
 	}
 	printf("%s\n", tokens -> items[end - 1]); // print last token and endline
 }
-/*This function prints a tokenlist in its entirety*/
+//This function prints a tokenlist in its entirety
 void print_tokenlist_full(tokenlist * tokens)
 {
 	for(int i = 0; i < tokens -> size - 1; i++) // print tokens 0 -> last
@@ -492,7 +482,7 @@ char *get_input(void)
 }
 
 
-/*This function returns 1 if first token contains a slash, 0 otherwise*/ 
+//This function returns 1 if first token contains a slash, 0 otherwise 
 int cmd_has_slash(tokenlist * input)
 {
 	if(strchr(input -> items[0], '/' ) == NULL) // if no '/' found
@@ -500,9 +490,8 @@ int cmd_has_slash(tokenlist * input)
 	else
 		return 1; // return true
 }
-/*This function returns 1 if first token refers to a  builtin func
- * such as exit, cd, echo, or jobs
- */
+//This function returns 1 if first token refers to a  builtin func
+// such as exit, cd, echo, or jobs
 int cmd_is_builtin(tokenlist * input)
 {
 	char * builtins[] = {"exit", "cd", "echo", "jobs"};
@@ -516,7 +505,7 @@ int cmd_is_builtin(tokenlist * input)
 	}
 	return 0; // if this point is reached, it isn't a builtin
 }
-/* This function returns a char * to a copy of the PATH env variable*/
+// This function returns a char * to a copy of the PATH env variable*/
 char * get_PATH_str()
 {
 	char * path_cpy = getenv("PATH"); // get PATH envvar
@@ -525,32 +514,27 @@ char * get_PATH_str()
 	strcpy(PATH, path_cpy); // copy PATH envvar and return copy 
 	return PATH;
 }
-/*This function returns a tokenlist of strings related to each
- * path in the PATH env variable, tokenized around the ':'
- */
+//This function returns a tokenlist of strings related to each
+// path in the PATH env variable, tokenized around the ':'
 tokenlist* tokenize_path(char ** PATH)
 {
 	tokenlist * t_list = new_tokenlist();
 	t_list = get_tokens_d(*PATH, ':'); // split up copy of PATH around : char
 	return t_list ;
 }
-/*
- * Wrapper function that gets PATH, tokenizes it, and then returns
- * the tokenlist ptr
- */
+// Wrapper function that gets PATH, tokenizes it, and then returns
+// the tokenlist ptr
 tokenlist* get_PATH_tokens()
 {
 	char * PATH = get_PATH_str(); //get copy of PATH
 	tokenlist * t_list = tokenize_path(&PATH); // tokenize copy
 	free (PATH); // free copy of char * of PATH
 	return t_list; // return tokenlist of PATH
-} /*
- *	This function searches the directory specified by the 
- *	parameter path token (pathdir) for a file matching 
- *	the name "filename". If it is found, 1 is returned. If
- *	not, 0 is returned. 
- */
-
+}
+//	This function searches the directory specified by the 
+//	parameter path token (pathdir) for a file matching 
+//	the name "filename". If it is found, 1 is returned. If
+//	not, 0 is returned. 
 int search_directory(const char * filename, const char * pathdir)
 {
 	int found = 0;	// assume the file ISN'T in the directory 
@@ -564,9 +548,11 @@ int search_directory(const char * filename, const char * pathdir)
 		if(d != NULL)
 		{	
 			entry = readdir(d); 
-			while(entry != NULL)  // while there are still items inside the directory, read them
+			while(entry != NULL)  // while there are still items inside 
+					      // the directory, read them
 			{
-				if(strcmp(entry -> d_name, filename) == 0) // if the name of the item == filename
+				if(strcmp(entry -> d_name, filename) == 0) 
+				// if the name of the item == filename
 					found = 1;
 				entry = readdir(d);
 			}	
@@ -584,11 +570,8 @@ int search_directory(const char * filename, const char * pathdir)
 
 	return found;
 }
-
-/*
- * This function returns a c-string representing the absolute path of the PATH dir
- * containing the filename parameter. If none is found, a NULL ptr is returned
- */
+// This function returns a c-string representing the absolute path of the PATH dir
+// containing the filename parameter. If none is found, a NULL ptr is returned
 char * get_path_dir(const char * filename)
 {	
 	char * path = NULL; // assuming the directory isn't found
@@ -608,7 +591,8 @@ char * get_path_dir(const char * filename)
 			}	
 			i++;
 				
-		}while(found != 1 && i < path_tokens -> size); // while file not found && paths remain
+		}while(found != 1 && i < path_tokens -> size); 
+		// while file not found && paths remain
 
 	}else			// print error if file not found
 	{
@@ -617,13 +601,10 @@ char * get_path_dir(const char * filename)
 		free_tokens(path_tokens);
 	return path;
 }
-
-/*
- * This function returns the absolute path of the filename IF found
- * within one of the PATH directories. If it doesn't find the path,
- * a NULL ptr is returned. Note that the return pointer needs to 
- * be freed later on if it isn't NULL.
- */
+// This function returns the absolute path of the filename IF found
+// within one of the PATH directories. If it doesn't find the path,
+// a NULL ptr is returned. Note that the return pointer needs to 
+// be freed later on if it isn't NULL.
 char* get_abs_path(const char * filename)
 {
 	char * path = get_path_dir(filename); // get directory containing file
@@ -635,7 +616,7 @@ char* get_abs_path(const char * filename)
 	}	
 	return path;
 }	
-/*This function returns a command concatenated with path before it*/
+//This function returns a command concatenated with path before it
 char * cm_path_cat(char * path, char * command)
 {
 	int length = strlen(path) + strlen(command) + 2;
@@ -646,7 +627,7 @@ char * cm_path_cat(char * path, char * command)
 	strcat(full,command);
 	return full;
 }
-/*This function processes I/O redirecton taking into account background processing*/
+//This function processes I/O redirecton taking into account background processing
 void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,int background)
 {	
 	char * file;
@@ -713,7 +694,7 @@ void ioRedirection(tokenlist *token, char * path, char * input, pidlist * pids ,
 			waitpid(pid, NULL, 0);
 	}
 }
-/*checks if redirection symbol is present*/
+//checks if redirection symbol is present
 void containRedirection(tokenlist *tokens)
 {	//sets global var to true if present 
 	for(int i = 0; i < tokens->size; i++)
@@ -724,7 +705,7 @@ void containRedirection(tokenlist *tokens)
 			in = true;
 	}
 }
-/*gets file name for redirection*/
+//gets file name for redirection
 char * getFile(char *input, bool flag)
 {
 	char * n;
@@ -750,10 +731,10 @@ char * getFile(char *input, bool flag)
 	return n;
 }
 
-/** This function checks each input token to see if it 
- * represents the symbol param. If there is a pipe, returns the index
- * of the first pipe in the tokenlist. Otherwise, returns
- * -1 */
+// This function checks each input token to see if it 
+// represents the symbol param. If there is a pipe, returns the index
+// of the first pipe in the tokenlist. Otherwise, returns
+// -1 
 int input_has_symbol(tokenlist * input, const char * symbol)
 {
 	int pipe = -1;
@@ -770,12 +751,12 @@ int input_has_symbol(tokenlist * input, const char * symbol)
 	return pipe;
 }
 
-/*This function assumes that no special operations are included 
- * in the command line. It executes the command and given parameters, 
- *depending on whether the given command is built in or an executable
-* found somewhere in the PATH directory list. 
-*/
-int exec_tokenlist(char ** cmd_path,tokenlist * tokens, pidlist * pids, time_t start, time_t longest_ps)
+// This function assumes that no special operations are included 
+// in the command line. It executes the command and given parameters, 
+// depending on whether the given command is built in or an executable
+// found somewhere in the PATH directory list. 
+int exec_tokenlist(char ** cmd_path,tokenlist * tokens, pidlist * pids, 
+		   time_t start, time_t longest_ps)
 {
 	int exit_time = 0;
 	
@@ -819,10 +800,9 @@ int exec_tokenlist(char ** cmd_path,tokenlist * tokens, pidlist * pids, time_t s
 		
 	return exit_time;
 }
-/* This function checks all the running processes in the shell's
- * process stack and if any are done, the finished process'
- * information is printed out and it is removed from the stack. 
- */
+// This function checks all the running processes in the shell's
+// process stack and if any are done, the finished process'
+// information is printed out and it is removed from the stack. 
 int check_pids(pidlist * pids)
 {
 	int pid = 0;
@@ -842,9 +822,8 @@ int check_pids(pidlist * pids)
 	return finish_time;
 }	
 
-/*This function goes through the list of pids and if the process 
- * is still running, it prints the relevant information for the process.
- */
+// This function goes through the list of pids and if the process 
+// is still running, it prints the relevant information for the process.
 void jobs(pidlist * pids)
 {
 	for(int i = 0; i < pids -> size; i++) // for each pid
@@ -857,13 +836,12 @@ void jobs(pidlist * pids)
 		}
 	}
 }
-/*This function assumes that the given input contains a &. It makes
- * a copy of the input tokens without the & and runs the command. If
- * this function isn't being called within a pipe (i.e., the pid
- * hasn't already been added in the pipe function), then the 
- * pid is added to the pidlist. Once this is done, the function returns
- * without waiting for the process to complete.
- */
+// This function assumes that the given input contains a &. It makes
+// a copy of the input tokens without the & and runs the command. If
+// this function isn't being called within a pipe (i.e., the pid
+// hasn't already been added in the pipe function), then the 
+// pid is added to the pidlist. Once this is done, the function returns
+// without waiting for the process to complete.
 void sleep_exec(tokenlist * input_tokens, pidlist * pids, int pipe)
 {
 
@@ -893,12 +871,11 @@ void sleep_exec(tokenlist * input_tokens, pidlist * pids, int pipe)
 	
 	return;
 }
-/*This function assumes the input contains only one | symbol.
- * It splits the entire input into two separate cmds and 
- * pipes the left hand side (CMD 1) into the right hand side
- * (CMD2) and then prints the results to stdout. If CMD2 contains
- * a & symbol, then CMD2 is executed in the background.
- */
+// This function assumes the input contains only one | symbol.
+// It splits the entire input into two separate cmds and 
+// pipes the left hand side (CMD 1) into the right hand side
+// (CMD2) and then prints the results to stdout. If CMD2 contains
+// a & symbol, then CMD2 is executed in the background.
 void double_pipe(tokenlist * input_tokens, pidlist *pids, time_t start, time_t longest_ps)
 {
 	
@@ -959,15 +936,14 @@ void double_pipe(tokenlist * input_tokens, pidlist *pids, time_t start, time_t l
 	free_tokens(cmd1);
 	free_tokens(cmd2);	
 }
-/*Similar to the double pipe function execpt that 
- * it doesn't support bckgr processing in any of the 
- * commands. Runs CMD1 with input from stdin, pipes 
- * output as input for CMD2,  pipes output from CMD2
- * as input for CMD3, and prints to stdout. The 
- * one key difference is the extra step of parsing
- * CMD 1 from CMD 1 | CMD 2 | CM3 and then parsing
- * CMD 2 and CMD 3 from CMD2 | CMD 3.
- */
+// Similar to the double pipe function execpt that 
+// it doesn't support bckgr processing in any of the 
+// commands. Runs CMD1 with input from stdin, pipes 
+// output as input for CMD2,  pipes output from CMD2
+// as input for CMD3, and prints to stdout. The 
+// one key difference is the extra step of parsing
+// CMD 1 from CMD 1 | CMD 2 | CM3 and then parsing
+// CMD 2 and CMD 3 from CMD2 | CMD 3.
 void triple_pipe(tokenlist * input_tokens, pidlist *pids,time_t start, time_t longest_ps)
 {
 	
@@ -1055,10 +1031,9 @@ void triple_pipe(tokenlist * input_tokens, pidlist *pids,time_t start, time_t lo
 
 	return;
 }
-/*This is an intial function that assumes the input contains at least one |
- * symbol. It determines how many | symbols and depending on the amount,
- * it calls double_pipe for CMD 1 | CMD 2 or triple_pipe for CMD 1|CMD2|CMD3
- */
+// This is an intial function that assumes the input contains at least one |
+// symbol. It determines how many | symbols and depending on the amount,
+// it calls double_pipe for CMD 1 | CMD 2 or triple_pipe for CMD 1|CMD2|CMD3
 void pipe_cmd(tokenlist * input_tokens, pidlist * pids, time_t start, time_t longest_ps)
 {
 
@@ -1076,11 +1051,10 @@ void pipe_cmd(tokenlist * input_tokens, pidlist * pids, time_t start, time_t lon
 	free_tokens(test); // clean up tokenlist 
 	return;
 }
-/*This function checks to see if all background processes are done.
-*If so, then print the longest running process and the total time 
-* the shell ran, then return the flag to the main() loop to indicate
-* that it is now time to terminate the program.
-*/
+// This function checks to see if all background processes are done.
+// If so, then print the longest running process and the total time 
+// the shell ran, then return the flag to the main() loop to indicate
+// that it is now time to terminate the program.
 int shell_exit(pidlist * pids, time_t start, time_t longest_ps)
 {
 	printf("Waiting for all processes to terminate...\n");
@@ -1093,7 +1067,7 @@ int shell_exit(pidlist * pids, time_t start, time_t longest_ps)
 	printf("Shell ran for %ld sec\n", shell_time);
 	return 1;
 }
-/*functions for echo, tilde, env variables*/
+//functions for echo, tilde, env variables
 void printingStuff(tokenlist *tokens, int check)
 {	//if echo is not present
 	if(check == 0)
@@ -1117,7 +1091,7 @@ void printingStuff(tokenlist *tokens, int check)
 	}
 	printf("\n");
 }
-/*gets the env variables and prints to screen*/
+//gets the env variables and prints to screen
 void getEnv(char * n)
 {
 	if(n[0] != '$')
@@ -1131,7 +1105,7 @@ void getEnv(char * n)
 
 	printf("%s",getenv(n));
 }
-/*gets tilde, prints, and checks if env variables follow*/
+//gets tilde, prints, and checks if env variables follow
 void getTilde(char * n)
 {
 	n = strtok(n, "~");
@@ -1145,7 +1119,7 @@ void getTilde(char * n)
 	else
 		printf("%s", n);
 }
-/*parses the string checking for env var*/
+//parses the string checking for env var
 bool containEnv(char *token)
 {
 	while(*token)
@@ -1156,7 +1130,7 @@ bool containEnv(char *token)
 	}
 	return false;
 }
-/*parses the string checking for ~*/
+//parses the string checking for ~
 bool containTilde(char *token)
 {
 	while(*token)
