@@ -44,5 +44,7 @@ Bugs
   There is one bug with  "Print how long it took for the longest running command to execute." 
   It works for printing the longest process if it is solely a process. 
   Also if it is solely a background process. 
-  finally if it is a regular process then a background process but not the other way around
-  /*COLIN ADD WHAT YOU TRIED HERE*/
+  finally if it is a regular process then a background process but not the other way around. To try
+  to fix this bug we switched the order of the if/else statements and changed one else if statement in 
+  main to a simple if statement. The bug has something to do with how the order of the code executes in
+  main depending on it it checks for background processing time or regular processing time first.
